@@ -130,11 +130,50 @@ def checar_duolingo(email):
         return None
 
 
+def checar_firefox(email):
+    url = "https://api.accounts.firefox.com/v1/account/status"
+    corpo = json.dumps({"email": email}).encode()
+    headers = {
+        "User-Agent": "Mozilla/5.0 (CyberVigiaLite)",
+        "Accept": "*/*",
+        "Content-Type": "application/json",
+        "Referer": "https://accounts.firefox.com/",
+        "Origin": "https://accounts.firefox.com",
+    }
+    req = urllib.request.Request(url, data=corpo, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            dados = json.loads(resp.read().decode())
+        return bool(dados.get("exists", False))
+    except Exception:
+        return None
+
+
+def checar_pinterest(email):
+    payload = json.dumps({"options": {"email": email}, "context": {}})
+    url = (
+        "https://www.pinterest.com/resource/EmailExistsResource/get/"
+        f"?source_url=%2F&data={urllib.parse.quote(payload)}"
+    )
+    headers = dict(HEADERS_PADRAO)
+    headers["X-Pinterest-AppState"] = "active"
+    headers["Accept"] = "application/json"
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            dados = json.loads(resp.read().decode())
+        return bool(dados.get("resource_response", {}).get("data", False))
+    except Exception:
+        return None
+
+
 def buscar_em_sites(email):
     return {
         "Gravatar": checar_gravatar(email),
         "GitHub": checar_github(email),
         "Duolingo": checar_duolingo(email),
+        "Firefox": checar_firefox(email),
+        "Pinterest": checar_pinterest(email),
     }
 
 
