@@ -167,6 +167,43 @@ def checar_pinterest(email):
         return None
 
 
+TWITTER_BEARER = (
+    "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs="
+    "1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+)
+
+
+def _twitter_guest_token():
+    url = "https://api.twitter.com/1.1/guest/activate.json"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (CyberVigiaLite)",
+        "Authorization": f"Bearer {TWITTER_BEARER}",
+    }
+    req = urllib.request.Request(url, data=b"", headers=headers, method="POST")
+    with urllib.request.urlopen(req, timeout=6) as resp:
+        dados = json.loads(resp.read().decode())
+    return dados["guest_token"]
+
+
+def checar_twitter(email):
+    try:
+        guest_token = _twitter_guest_token()
+        url = f"https://api.twitter.com/i/users/email_available.json?email={urllib.parse.quote(email)}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (CyberVigiaLite)",
+            "Authorization": f"Bearer {TWITTER_BEARER}",
+            "x-guest-token": guest_token,
+        }
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            dados = json.loads(resp.read().decode())
+        if dados.get("valid") is False:
+            return True
+        return False
+    except Exception:
+        return None
+
+
 def buscar_em_sites(email):
     return {
         "Gravatar": checar_gravatar(email),
@@ -174,6 +211,7 @@ def buscar_em_sites(email):
         "Duolingo": checar_duolingo(email),
         "Firefox": checar_firefox(email),
         "Pinterest": checar_pinterest(email),
+        "X (Twitter)": checar_twitter(email),
     }
 
 
